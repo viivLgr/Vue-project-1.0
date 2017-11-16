@@ -1,10 +1,10 @@
 <template>
   <div class="cartcontrol">
-    <span class="cart-decrease" v-show="food.count>0" @click="decreaseCart($event)" transition="move">
+    <span class="cart-decrease" v-show="food.count>0" @click.stop.prevent="decreaseCart($event)" transition="move">
       <i class="icon-remove_circle_outline inner"></i>
     </span>
     <span class="cart-count" v-show="food.count>0">{{food.count}}</span>
-    <span class="cart-increase" @click="addCart($event)"><i class="icon-add_circle"></i></span>
+    <span class="cart-increase" @click.stop.prevent="addCart($event)"><i class="icon-add_circle"></i></span>
   </div>
 </template>
 <script type="text/ecmascript-6">
@@ -17,7 +17,7 @@
     },
     methods: {
       addCart (event) {
-        if (!event._constructed) {  // 组织触发两次
+        if (!event._constructed) {  // 阻止触发两次  betterscroll才可以触发
           return;
         }
         if (!this.food.count) {
@@ -53,7 +53,7 @@
       transition: all 0.4s linear;
       &.move-transition {
         opacity: 1;
-        transform: translate3D(0, 0, 0);
+        transform: translate3d(0, 0, 0);
         .inner {
           display: inline-block;
           transition: all 0.4s linear;
@@ -61,7 +61,7 @@
         }
       }
       &.move-enter, &.move-leave {
-        transform: translate3D(24px, 0, 0);
+        transform: translate3d(24px, 0, 0);
         .inner {
           transform: rotate(180deg);
         }

@@ -16,7 +16,7 @@
         <li v-for="item in goods" class="food-list food-list-hook">
           <h3 class="title">{{item.name}}</h3>
           <ul>
-            <li v-for="food in item.foods" class="food-item">
+            <li v-for="food in item.foods" class="food-item" @click.stop.prevent="selectFood(food,$event)">
               <div class="img"><img :src="food.icon" width="57" height="57"></div>
               <div class="content">
                 <h4 class="name">{{food.name}}</h4>
@@ -28,7 +28,7 @@
                   <span class="now"><i>￥</i>{{food.price}}</span><span class="old" v-show="food.oldPrice">￥{{food.oldPrice}}</span>
                 </div>
                 <div class="cartcontrol-wrapper">
-                  <cartcount :food="food"></cartcount>
+                  <cartcontrol :food="food"></cartcontrol>
                 </div>
               </div>
             </li>
@@ -38,12 +38,14 @@
     </div>
     <shopcart v-ref:shopcart :select-foods="selectFoods" :delivery-price="seller.deliveryPrice"
               :min-price="seller.minPrice"></shopcart>
+    <food :food="selectedFood" v-ref:food></food>
   </div>
 </template>
 <script type="text/ecmascript-6">
   import BScroll from 'better-scroll';
   import shopcart from 'components/shopcart/shopcart';
-  import cartcount from 'components/cartcontrol/cartcontrol';
+  import cartcontrol from 'components/cartcontrol/cartcontrol';
+  import food from 'components/food/food';
   import icon from 'components/icon/icon';
 
   const ERROR_OK = 0;
@@ -57,7 +59,8 @@
       return {
         goods: [],
         listHeight: [],
-        scrollY: 0
+        scrollY: 0,
+        selectedFood: {}
       };
     },
     computed: {
@@ -97,6 +100,13 @@
       });
     },
     methods: {
+      selectFood(food, event) {
+        if (!event._constructed) {   // _constructed 原生没有这个属性 阻止原生点击  获取自定义派发
+          return;
+        }
+        this.selectedFood = food;
+        this.$refs.food.show();  // 执行子组件方法
+      },
       selectMenu(index, event) {
         if (!event._constructed) {   // _constructed 原生没有这个属性 阻止原生点击  获取自定义派发
           return;
@@ -129,13 +139,17 @@
         }
       },
       _drop (target) {
-        this.$refs.shopcart.drop(target);  // 获取子组件，并使用子组件的方法
+        // 体验优化，异步执行下落优化
+        this.$nextTick(() => {
+          this.$refs.shopcart.drop(target);  // 获取子组件，并使用子组件的方法
+        });
       }
     },
     components: {
       icon,
       shopcart,
-      cartcount
+      cartcontrol,
+      food
     },
     events: {
       'cart.add'(target) {  // 接收子组件传递的target 并且在_drop中使用
