@@ -12,31 +12,40 @@
         <a v-link="{path:'/seller'}">商家</a>
       </div>
     </div>
-    <router-view :seller="seller"></router-view>
+    <router-view :seller="seller" keep-alive></router-view>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
-import header from 'components/header/header';
+  import header from 'components/header/header';
+  import {urlParse} from 'common/js/util';
 
-const ERR_OK = 0;
+  const ERR_OK = 0;
 
-export default {
-  data () {
-    return {
-      seller: {}
-    };
-  },
-  created () {
-    this.$http.get('/api/seller').then((res) => {
-      res = res.body;
-        if (res.errno === ERR_OK) {
-            this.seller = res.data;
+  export default {
+    data() {
+      return {
+        seller: {
+          id: (() => {
+            let queryParam = urlParse();
+            console.log(queryParam);
+            return queryParam.id;
+          })()
         }
-    });
-  },
-  components: { 'v-header': header }
-};
+      };
+    },
+    created() {
+      this.$http.get('/api/seller?id=' + this.seller.id).then((res) => {
+        res = res.body;
+        if (res.errno === ERR_OK) {
+        // this.seller = res.data;
+        // 拓展属性
+          this.seller = Object.assign({}, this.seller, res.data);
+        }
+      });
+    },
+    components: {'v-header': header}
+  };
 </script>
 
 <style lang="stylus" rel="stylesheet/stylus">
@@ -47,7 +56,7 @@ export default {
     width: 100%;
     height: 40px;
     line-height: 40px;
-    border-1px(rgba(7,17,27,0.1));
+    border-1px(rgba(7, 17, 27, 0.1));
 
     .tab-item {
       flex: 1;

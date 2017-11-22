@@ -72,7 +72,7 @@
       .star-item {
         width: 15px;
         height: 15px;
-        margin-right: 16px;
+        margin-right: 4px;
         background-size: 15px;
         &:last-child {
           margin-right: 0;
