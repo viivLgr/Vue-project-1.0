@@ -1,9 +1,9 @@
 <template>
   <div class="goods">
-    <div class="menu-wrapper" v-el:menu-wrapper>
+    <div class="menu-wrapper" ref="menu-wrapper">
       <ul>
-        <li v-for="item in goods" class="menu-item" :class="{'current':currentIndex===$index}"
-            @click="selectMenu($index,$event)">
+        <li v-for="(item,index) in goods" class="menu-item" :class="{'current':currentIndex===index}"
+            @click="selectMenu(index,$event)" ref="menuList">
           <p class="text">
             <icon :num="3" :type="item.type"></icon>
             {{item.name}}
@@ -11,9 +11,9 @@
         </li>
       </ul>
     </div>
-    <div class="foods-wrapper" v-el:foods-wrapper>
+    <div class="foods-wrapper" ref="foods-wrapper">
       <ul>
-        <li v-for="item in goods" class="food-list food-list-hook">
+        <li v-for="item in goods" class="food-list" ref="foodList">
           <h3 class="title">{{item.name}}</h3>
           <ul>
             <li v-for="food in item.foods" class="food-item" @click.stop.prevent="selectFood(food,$event)">
@@ -36,9 +36,9 @@
         </li>
       </ul>
     </div>
-    <shopcart v-ref:shopcart :select-foods="selectFoods" :delivery-price="seller.deliveryPrice"
-              :min-price="seller.minPrice"></shopcart>
-    <food :food="selectedFood" v-ref:food></food>
+    <shopcart ref="shopcart" :selectFoods="selectFoods" :deliveryPrice="seller.deliveryPrice"
+              :minPrice="seller.minPrice"></shopcart>
+    <food @add="addFood" :food="selectedFood" ref="food"></food>
   </div>
 </template>
 <script type="text/ecmascript-6">
@@ -49,6 +49,8 @@
   import icon from 'components/icon/icon';
 
   const ERROR_OK = 0;
+  const debug = process.env.NODE_ENV !== 'production';
+
   export default {
     props: {
       seller: {
@@ -69,6 +71,7 @@
           let height1 = this.listHeight[i];
           let height2 = this.listHeight[i + 1];
           if (!height2 || (this.scrollY >= height1 && this.scrollY < height2)) {
+            this._followScroll(i);
             return i;
           }
         }
@@ -88,13 +91,14 @@
     },
     created () {
       this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee'];
-      this.$http.get('/api/goods').then((res) => {
+      const url = debug ? '/api/goods' : 'http://ustbhuangyi.com/sell/api/goods';
+      this.$http.get(url).then((res) => {
         res = res.body;
         if (res.errno === ERROR_OK) {
           this.goods = res.data;
           this.$nextTick(() => { // 初始化数据
             this._initScroll();
-            this._calcuHeight();
+            this._calculateHeight();
           });
         }
       });
@@ -111,25 +115,32 @@
         if (!event._constructed) {   // _constructed 原生没有这个属性 阻止原生点击  获取自定义派发
           return;
         }
-        let foodList = this.$els.foodsWrapper.getElementsByClassName('food-list-hook');
-        this.foodsScroll.scrollToElement(foodList[index], 300);
+        let foodList = this.$refs.foodList;
+        let el = foodList[index];
+        this.foodsScroll.scrollToElement(el, 300);
+      },
+      addFood(target) {
+        this._drop(target);
       },
       _initScroll () {
-        this.menuScroll = new BScroll(this.$els.menuWrapper, {
+        this.menuScroll = new BScroll(this.$refs.menuWrapper, {
           click: true // 可以点击
         });
 
-        this.foodsScroll = new BScroll(this.$els.foodsWrapper, {
+        this.foodsScroll = new BScroll(this.$refs.foodsWrapper, {
           click: true,
           probeType: 3 // 实时监听位置
         });
 
         this.foodsScroll.on('scroll', (pos) => {
-          this.scrollY = Math.abs(Math.round(pos.y));
+          // 判断滑动方向，避免下拉时分类高亮错误（如第一分类商品数量为1时，下拉使得第二分类高亮）
+          if (pos.y <= 0) {
+            this.scrollY = Math.abs(Math.round(pos.y));
+          }
         });
       },
-      _calcuHeight () {
-        let foodList = this.$els.foodsWrapper.getElementsByClassName('food-list-hook');
+      _calculateHeight () {
+        let foodList = this.$refs.foodList;
         let height = 0;
         this.listHeight.push(height);
         for (let i = 0; i < foodList.length; i++) {
@@ -137,6 +148,11 @@
           height += item.clientHeight; // 区域高度
           this.listHeight.push(height);
         }
+      },
+      _followScroll(index) {
+        let menuList = this.$refs.menuList;
+        let el = menuList[index];
+        this.meunScroll.scrollToElement(el, 300, 0, -100);
       },
       _drop (target) {
         // 体验优化，异步执行下落优化
@@ -150,11 +166,6 @@
       shopcart,
       cartcontrol,
       food
-    },
-    events: {
-      'cart.add'(target) {  // 接收子组件传递的target 并且在_drop中使用
-        this._drop(target);
-      }
     }
   };
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="seller" v-el:seller>
+  <div class="seller" ref="seller">
     <div class="seller-content">
       <div class="overview">
         <h2 class="title">{{seller.name}}</h2>
@@ -47,8 +47,8 @@
       <split></split>
       <div class="pics">
         <h2 class="title">商家实景</h2>
-        <div class="pic-wrapper" v-el:pic-wrapper>
-          <ul class="pic-list" v-el:pic-list>
+        <div class="pic-wrapper" ref="pic-wrapper">
+          <ul class="pic-list" ref="pic-list">
             <li v-for="pic in seller.pics" class="pic-item">
               <img :src="pic" width="120" height="90">
             </li>
@@ -92,24 +92,29 @@
     },
     watch: {
       'seller'() {
-        this._initScroll();
-        this._initPics();
+        this.$nextTick(() => {
+          this._initScroll();
+          this._initPics();
+        });
       }
     },
-    ready() {
-      this._initScroll();
-      this._initPics();
+    mounted() {
+      this.$nextTick(() => {
+        this._initScroll();
+        this._initPics();
+      });
     },
     methods: {
       toggleFavorite(event) {
         if (!event.constructed) {
-          this.favorite = !this.favorite;
-          saveToLocal(this.seller.id, 'favorite', this.favorite);
+          return;
         }
+        this.favorite = !this.favorite;
+        saveToLocal(this.seller.id, 'favorite', this.favorite);
       },
       _initScroll() {
         if (!this.scroll) {
-          this.scroll = new BScroll(this.$els.seller, {
+          this.scroll = new BScroll(this.$refs.seller, {
             click: true
           });
         } else {
@@ -122,10 +127,10 @@
           let picW = 120;
           let marginW = 6;
           let width = (picW + marginW) * this.seller.pics.length - marginW;
-          this.$els.picList.style.width = width + 'px';
+          this.$refs.picList.style.width = width + 'px';
           this.$nextTick(() => {
             if (!this.picScroll) {
-              this.picScroll = new BScroll(this.$els.picWrapper, {
+              this.picScroll = new BScroll(this.$refs.picWrapper, {
                 scrollX: true,
                 eventPassthrough: 'vertical' // 忽略竖向滚动
               });

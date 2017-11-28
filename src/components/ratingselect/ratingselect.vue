@@ -64,14 +64,14 @@
           return;
         }
         this.selectType = type;
-        this.$dispatch('ratingtype.select', type);
+        this.$emit('select', type);
       },
       toggleContent(event) {
         if (!event._constructed) {   // _constructed 原生没有这个属性 阻止原生点击  获取自定义派发
           return;
         }
         this.onlyContent = !this.onlyContent;
-        this.$dispatch('content.toggle', this.onlyContent);
+        this.$emit('toggle');
       }
     }
   };
